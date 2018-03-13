@@ -82,7 +82,7 @@ public class ActiveNotifier implements FineGrainedNotifier {
         if (changes != null) {
             notifyStart(build, changes);
         } else {
-            notifyStart(build, getBuildStatusMessage(build, false, false, notifier.includeCustomMessage()));
+            notifyStart(build, getBuildStatusMessage(build, false, false, notifier.includeCustomMessage(), false));
         }
     }
 
@@ -106,7 +106,7 @@ public class ActiveNotifier implements FineGrainedNotifier {
         Result previousResult = (previousBuild != null) ? previousBuild.getResult() : Result.SUCCESS;
         if((result.isWorseThan(previousResult) || moreTestFailuresThanPreviousBuild(r, previousBuild)) && notifier.getNotifyRegression()) {
             getSlack(r).publish(getBuildStatusMessage(r, notifier.includeTestSummary(),
-                    notifier.includeFailedTests(), notifier.includeCustomMessage()), getBuildColor(r));
+                    notifier.includeFailedTests(), notifier.includeCustomMessage(), notifier.includeConsoleOutput()), getBuildColor(r));
             if (notifier.getCommitInfoChoice().showAnything()) {
                 getSlack(r).publish(getCommitList(r), getBuildColor(r));
             }
@@ -135,7 +135,7 @@ public class ActiveNotifier implements FineGrainedNotifier {
                 || (result == Result.SUCCESS && notifier.getNotifySuccess())
                 || (result == Result.UNSTABLE && notifier.getNotifyUnstable())) {
             getSlack(r).publish(getBuildStatusMessage(r, notifier.includeTestSummary(),
-                    notifier.includeFailedTests(), notifier.includeCustomMessage()), getBuildColor(r));
+                    notifier.includeFailedTests(), notifier.includeCustomMessage(), notifier.includeConsoleOutput()), getBuildColor(r));
             if (notifier.getCommitInfoChoice().showAnything()) {
                 getSlack(r).publish(getCommitList(r), getBuildColor(r));
             }
@@ -253,7 +253,7 @@ public class ActiveNotifier implements FineGrainedNotifier {
         }
     }
 
-    String getBuildStatusMessage(AbstractBuild r, boolean includeTestSummary, boolean includeFailedTests, boolean includeCustomMessage) {
+    String getBuildStatusMessage(AbstractBuild r, boolean includeTestSummary, boolean includeFailedTests, boolean includeCustomMessage, boolean includeConsoleOutput) {
         MessageBuilder message = new MessageBuilder(notifier, r);
         message.appendStatusMessage();
         message.appendDuration();
@@ -266,6 +266,9 @@ public class ActiveNotifier implements FineGrainedNotifier {
         }
         if (includeCustomMessage) {
             message.appendCustomMessage();
+        }
+        if (includeConsoleOutput) {
+            message.appendConsoleOutput();
         }
         return message.toString();
     }
@@ -446,6 +449,26 @@ public class ActiveNotifier implements FineGrainedNotifier {
             message.append(envVars.expand(customMessage));
             return this;
         }
+
+        public MessageBuilder appendConsoleOutput() {
+            String customMessage = notifier.getCustomMessage();
+            EnvVars envVars = new EnvVars();
+            try {
+                envVars = build.getEnvironment(new LogTaskListener(logger, INFO));
+            } catch (IOException e) {
+                logger.log(SEVERE, e.getMessage(), e);
+            } catch (InterruptedException e) {
+                logger.log(SEVERE, e.getMessage(), e);
+            }
+            message.append("\n");
+            try {
+                message.append(build.getLog(50));
+            } catch (IOException e) {
+                logger.log(SEVERE, e.getMessage(), e);
+                message.append("Geting log file was imposible");
+            }
+            return this;
+        }
         
         private String createBackToNormalDurationString(){
             // This status code guarantees that the previous build fails and has been successful before
@@ -493,5 +516,6 @@ public class ActiveNotifier implements FineGrainedNotifier {
         public String toString() {
             return message.toString();
         }
+
     }
 }

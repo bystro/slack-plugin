@@ -61,6 +61,7 @@ public class SlackNotifier extends Notifier {
     private boolean includeFailedTests;
     private CommitInfoChoice commitInfoChoice;
     private boolean includeCustomMessage;
+    private boolean includeConsoleOutput;
     private String customMessage;
 
     @Override
@@ -176,6 +177,10 @@ public class SlackNotifier extends Notifier {
 
     public boolean includeCustomMessage() {
         return includeCustomMessage;
+    }
+
+    public boolean includeConsoleOutput() {
+        return includeConsoleOutput;
     }
 
     public String getCustomMessage() {

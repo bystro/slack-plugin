@@ -44,6 +44,9 @@
         <f:entry title="Include Failed Tests">
             <f:checkbox name="includeFailedTests" value="true" checked="${instance.includeFailedTests()}"/>
         </f:entry>
+        <f:entry title="Include Console Output">
+            <f:checkbox name="includeConsoleOutput" value="true" checked="${instance.includeConsoleOutput()}"/>
+        </f:entry>
 
         <f:optionalBlock name="includeCustomMessage" title="Include Custom Message" checked="${instance.includeCustomMessage()}">
             <f:entry title="Custom Message" help="/plugin/slack/help-projectConfig-slackCustomMessage.html">
